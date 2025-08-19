@@ -5,10 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on "Keep a Changelog" and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Planned: Add persistent storage for snippets (database layer)
-- Planned: Implement HTML templates for views
-- Planned: Add create form with validation and POST handling
-- Planned: Basic tests for handlers and routing
+### Changed
+- Documentation: Expanded README with details on templates and static assets, browser usage, and project structure (2025-08-18).
+
+### Planned
+- Add persistent storage for snippets (database layer)
+- Implement HTML templates for views
+- Add create form with validation and POST handling
+- Basic tests for handlers and routing
 
 ## [0.1.0] - 2025-08-18
 ### Added

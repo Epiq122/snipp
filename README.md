@@ -7,11 +7,13 @@ A simple Go web application for creating and viewing text snippets. This reposit
 - Changelog: See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Features (current)
-- Minimal HTTP server using `net/http`
+- HTTP server using `net/http`
+- Server-side HTML templates for the home page (`ui/html`)
+- Static assets served from `/static` (`ui/static` for CSS/JS/images)
 - Routes
-  - `/` — home page with a greeting
+  - `/` — home page rendered via templates
   - `/snippet/view/{id}` — view a snippet by numeric ID
-  - `/snippet/create` — placeholder for creating a snippet
+  - `/snippet/create` — placeholder for creating a snippet (GET and POST)
 
 ## Getting started
 
@@ -24,6 +26,12 @@ A simple Go web application for creating and viewing text snippets. This reposit
 go run ./...
 # Server will start on http://localhost:8080
 ```
+
+Then open http://localhost:8080 in your browser to view the templated home page.
+
+Static files are available under `/static`, for example:
+- http://localhost:8080/static/css/main.css
+- http://localhost:8080/static/img/logo.png
 
 ### Example requests
 - Home: `curl http://localhost:8080/`
@@ -50,9 +58,18 @@ We follow [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](
 - MINOR: backward-compatible features and improvements
 - PATCH: bug fixes and small internal changes
 
+## Project structure (excerpt)
+```
+cmd/web           # Go entry point and HTTP handlers
+ui/html           # Base layout, pages, and partial templates
+ui/static/css     # Stylesheets
+ui/static/js      # JavaScript
+ui/static/img     # Images
+```
+
 ## Roadmap (high level)
 - Persistent storage for snippets (database)
-- HTML templates for server-rendered pages
+- Enhanced HTML templates for server-rendered pages
 - Snippet creation form with validation and POST handling
 - Basic tests for handlers and routing
 
