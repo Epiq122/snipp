@@ -3,7 +3,7 @@
 A simple Go web application for creating and viewing text snippets. This repository is being developed incrementally, with each section documented and versioned so that viewers can follow the progress.
 
 - Project status: Early development
-- Current version: 0.1.0 (2025-08-18)
+- Current version: 0.2.0 (2025-08-19)
 - Changelog: See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Features (current)

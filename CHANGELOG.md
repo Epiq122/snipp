@@ -5,14 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on "Keep a Changelog" and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Changed
-- Documentation: Expanded README with details on templates and static assets, browser usage, and project structure (2025-08-18).
-
 ### Planned
 - Add persistent storage for snippets (database layer)
-- Implement HTML templates for views
 - Add create form with validation and POST handling
 - Basic tests for handlers and routing
+
+## [0.2.0] - 2025-08-19
+### Added
+- Server-side HTML template rendering for the home page (base layout, nav partial, home page).
+- Static file serving from `/static` (CSS, JS, images); added favicon and logo assets.
+- GET and POST handlers for `/snippet/create` with basic responses.
+- Basic UI scaffolding: `ui/static/css/main.css` and `ui/static/js/main.js`.
+
+### Changed
+- Home route now renders templates instead of plain text.
+- Documentation: Expanded README with details on templates and static assets, browser usage, and project structure (2025-08-18).
 
 ## [0.1.0] - 2025-08-18
 ### Added
