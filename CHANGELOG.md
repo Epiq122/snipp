@@ -9,11 +9,33 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Planned
 
-- Enhanced HTML templates for server-rendered pages
+- Further enhancements to HTML templates (forms, validation feedback)
 - Add create form with validation and POST handling
 - Basic tests for handlers and routing
 - User authentication system
 - HTTPS support with automatic certificate management
+
+## [0.4.1] - 2025-08-20
+
+### Added
+
+- Custom template function `humanDate` for formatting time values in a user-friendly format
+- Buffer-based template rendering to improve error handling and performance
+- Template data helper function `newTemplateData` that automatically includes the current year
+- Comprehensive documentation for dynamic HTML templates system explaining the structure and context handling
+
+### Fixed
+
+- Template error in view.tmpl when accessing individual snippets - corrected context handling within the {{with .Snippet}} block by using direct field references (.Title, .ID, etc.) instead of redundant path notation (.Snippet.Title)
+- Improved template context handling to follow Go's standard template conventions
+- Enhanced error handling in template rendering to provide clearer error messages
+
+### Changed
+
+- Optimized template execution with a buffered approach to catch errors before writing to the response
+- Enhanced README documentation with detailed template system architecture
+- Updated project structure documentation to highlight the template organization
+- Added detailed explanations of Go template context handling in documentation
 
 ## [0.4.0] - 2025-08-19
 

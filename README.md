@@ -4,14 +4,19 @@ A simple Go web application for creating and viewing text snippets. This reposit
 with each section documented and versioned so that viewers can follow the progress.
 
 - Project status: Early development
-- Current version: 0.3.0 (2025-08-19)
+- Current version: 0.4.1 (2025-08-20)
 - Changelog: See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Features (current)
 
 - HTTP server using `net/http`
 - Structured logging via `log/slog` (startup and error logs)
-- Server-side HTML templates for the home page (`ui/html`)
+- Dynamic HTML templates with proper context handling:
+    - Base layout template with content blocks (`ui/html/base.tmpl`)
+    - Page-specific templates (`ui/html/pages/`)
+    - Reusable partial templates (`ui/html/partials/`)
+    - Proper context handling in template blocks (using Go's template conventions)
+    - Template caching for improved performance
 - Static assets served from `/static` (`ui/static` for CSS/JS/images)
 - Routing with Go 1.22+ pattern-based `ServeMux` (path variables like `{id}`)
 - MySQL database integration for persistent snippet storage
@@ -95,15 +100,41 @@ cmd/web           # Go entry point and HTTP handlers
   ├─ main.go      # App bootstrap and logging setup (slog)
   ├─ routes.go    # HTTP routes using pattern-based ServeMux
   ├─ handlers.go  # Request handlers
+  ├─ templates.go # Template functions and cache
   └─ helpers.go   # Shared helpers (errors, etc.)
 internal/models   # Data models and database operations
   ├─ snippets.go  # Snippet model with CRUD operations
   └─ errors.go    # Custom error definitions
 ui/html           # Base layout, pages, and partial templates
+  ├─ base.tmpl    # Main layout template
+  ├─ pages/       # Page-specific templates
+  └─ partials/    # Reusable template components
 ui/static/css     # Stylesheets
 ui/static/js      # JavaScript
 ui/static/img     # Images
 ```
+
+## Template System
+
+Our application uses Go's built-in template package with a structured approach:
+
+### Template Organization
+
+- **Base Layout** (`base.tmpl`): Contains the HTML shell with placeholders for content
+- **Page Templates** (`pages/*.tmpl`): Specific content for each route/view
+- **Partial Templates** (`partials/*.tmpl`): Reusable components like navigation
+
+### Context Handling
+
+When working with templates, proper context handling is crucial:
+
+- Outside `{{with}}` blocks, use full paths like `.Snippet.Title`
+- Inside `{{with .Snippet}}` blocks, the context changes to the Snippet object, so use direct field references like
+  `.Title`
+
+### Template Caching
+
+For performance reasons, templates are parsed once at startup and stored in a template cache.
 
 ## Roadmap (high level)
 
