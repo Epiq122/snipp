@@ -27,8 +27,7 @@ func (m *SnippetModel) Insert(title string, content string, expires int) (int, e
 	if err != nil {
 		return 0, err
 	}
-	// Use the LastInsertId() method on the result to get the ID of our
-	// newly inserted record in the snippets table.
+
 	id, err := result.LastInsertId()
 	if err != nil {
 		return 0, err
@@ -43,12 +42,8 @@ func (m SnippetModel) Get(id int) (Snippet, error) {
 
 	row := m.DB.QueryRow(stmt, id)
 
-	// zeroed snippet struct
 	var s Snippet
 
-	//row.Scan are *pointers* to the place you want to copy the data into,
-	// and the number of arguments must be exactly the same as the number of
-	// columns returned by your statement.
 	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -62,6 +57,28 @@ func (m SnippetModel) Get(id int) (Snippet, error) {
 }
 
 func (m SnippetModel) Latest() ([]Snippet, error) {
-	return nil, nil
+	stmt := `SELECT id, title, content, created, expires FROM snippets
+	WHERE expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10`
+
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var snippets []Snippet
+
+	for rows.Next() {
+		var s Snippet
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		if err != nil {
+			return nil, err
+		}
+		snippets = append(snippets, s)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return snippets, nil
 
 }

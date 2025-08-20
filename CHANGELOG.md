@@ -9,11 +9,34 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Planned
 
-- Add persistent storage for snippets (database layer)
+- Enhanced HTML templates for server-rendered pages
 - Add create form with validation and POST handling
 - Basic tests for handlers and routing
 - User authentication system
 - HTTPS support with automatic certificate management
+
+## [0.4.0] - 2025-08-19
+
+### Added
+
+- MySQL database integration for persistent snippet storage
+- Database connection setup with environment-based password configuration
+- `internal/models` package with data models and database operations:
+    - `Snippet` struct representing the data model
+    - `SnippetModel` for database operations (Insert, Get, Latest)
+    - Custom error handling with `ErrNoRecord`
+- Command-line flag for database connection string (`-dsn`)
+- Database connection pooling and proper resource cleanup
+- Database-powered snippet routes:
+    - Home page now displays latest snippets from database
+    - View snippet fetches data from database by ID
+    - Create snippet endpoint stores data in database
+
+### Changed
+
+- Updated application structure to support dependency injection of database
+- Handlers now use the model layer to access data instead of hardcoded responses
+- Added database connection details to documentation
 
 ## [0.3.0] - 2025-08-19
 
