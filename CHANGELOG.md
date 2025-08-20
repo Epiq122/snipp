@@ -26,7 +26,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Template error in view.tmpl when accessing individual snippets - corrected context handling within the {{with .Snippet}} block by using direct field references (.Title, .ID, etc.) instead of redundant path notation (.Snippet.Title)
+- Template error in view.tmpl when accessing individual snippets - corrected context handling within the {{with
+  .Snippet}} block by using direct field references (.Title, .ID, etc.) instead of redundant path notation (
+  .Snippet.Title)
 - Improved template context handling to follow Go's standard template conventions
 - Enhanced error handling in template rendering to provide clearer error messages
 
