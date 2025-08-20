@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 )
@@ -27,8 +28,6 @@ func (app *application) clientError(w http.ResponseWriter, status int) {
 }
 
 func (app *application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
-	// Retrieve the appropriate template set from the cache based on the page
-	// name (like 'home.tmpl').
 	ts, ok := app.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("template %s not found", page)
@@ -37,11 +36,20 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, status in
 		return
 	}
 
-	w.WriteHeader(status)
+	// Initialize a new buffer.
+	buf := new(bytes.Buffer)
 
-	err := ts.ExecuteTemplate(w, "base", data)
+	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
+
+	// if the template executed successfully, write the status code and
+	w.WriteHeader(status)
+
+	// Write the contents of the buffer to the http.ResponseWriter. Note: this
+	// is another time where we pass our http.ResponseWriter to a function that
+	// takes an io.Writer
+	buf.WriteTo(w)
 }
