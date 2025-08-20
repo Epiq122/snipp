@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func (app *appliction) home(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "Go")
 
 	files := []string{
@@ -18,21 +18,18 @@ func (app *appliction) home(w http.ResponseWriter, r *http.Request) {
 
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		app.logger.Error(err.Error(), "method", r.Method, "url", r.URL.RequestURI())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		app.serverError(w, r, err)
 		return
 	}
 
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		app.logger.Error(err.Error(), "method", r.Method, "url", r.URL.RequestURI())
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		app.serverError(w, r, err)
 		return
 	}
 }
 
-func (app *appliction) snippetView(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.NotFound(w, r)
@@ -42,11 +39,11 @@ func (app *appliction) snippetView(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (app *appliction) snippetCreate(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Create a new snippet"))
 }
 
-func (app *appliction) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Saving new snippet"))
 

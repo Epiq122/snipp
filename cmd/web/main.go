@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-type appliction struct {
+type application struct {
 	logger *slog.Logger
 }
 
@@ -23,7 +23,7 @@ func main() {
 
 	// Initialize a new instance of our application struct, containing the
 	// dependencies (for now, just the structured logger).
-	app := &appliction{
+	app := &application{
 		logger: logger,
 	}
 
@@ -35,7 +35,7 @@ func main() {
 	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
 	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
-	logger.Info("starting on server %s", *addr)
+	logger.Info("starting on server", "addr", *addr)
 
 	err := http.ListenAndServe(*addr, mux)
 
