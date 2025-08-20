@@ -3,13 +3,15 @@
 A simple Go web application for creating and viewing text snippets. This repository is being developed incrementally, with each section documented and versioned so that viewers can follow the progress.
 
 - Project status: Early development
-- Current version: 0.2.0 (2025-08-19)
+- Current version: 0.3.0 (2025-08-19)
 - Changelog: See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Features (current)
 - HTTP server using `net/http`
+- Structured logging via `log/slog` (startup and error logs)
 - Server-side HTML templates for the home page (`ui/html`)
 - Static assets served from `/static` (`ui/static` for CSS/JS/images)
+- Routing with Go 1.22+ pattern-based `ServeMux` (path variables like `{id}`)
 - Routes
   - `/` — home page rendered via templates
   - `/snippet/view/{id}` — view a snippet by numeric ID
@@ -18,7 +20,7 @@ A simple Go web application for creating and viewing text snippets. This reposit
 ## Getting started
 
 ### Prerequisites
-- Go 1.22+ (or compatible)
+- Go 1.25+ (or compatible)
 
 ### Run locally
 ```bash
@@ -27,7 +29,14 @@ go run ./...
 # Server will start on http://localhost:8080
 ```
 
-Then open http://localhost:8080 in your browser to view the templated home page.
+#### Custom address/port
+You can change the listen address using the `-addr` flag (defaults to `:8080`):
+```bash
+go run ./cmd/web -addr=:4000
+# Server will start on http://localhost:4000
+```
+
+Then open http://localhost:8080 (or your chosen port) in your browser to view the templated home page.
 
 Static files are available under `/static`, for example:
 - http://localhost:8080/static/css/main.css
@@ -36,7 +45,8 @@ Static files are available under `/static`, for example:
 ### Example requests
 - Home: `curl http://localhost:8080/`
 - View snippet: `curl http://localhost:8080/snippet/view/123`
-- Create (placeholder): `curl http://localhost:8080/snippet/create`
+- Create (GET placeholder): `curl http://localhost:8080/snippet/create`
+- Create (POST placeholder): `curl -i -X POST http://localhost:8080/snippet/create`
 
 ## Development workflow
 We maintain a documented history of changes after each section of work.
@@ -61,6 +71,10 @@ We follow [Semantic Versioning](https://semver.org/) and the [Keep a Changelog](
 ## Project structure (excerpt)
 ```
 cmd/web           # Go entry point and HTTP handlers
+  ├─ main.go      # App bootstrap and logging setup (slog)
+  ├─ routes.go    # HTTP routes using pattern-based ServeMux
+  ├─ handlers.go  # Request handlers
+  └─ helpers.go   # Shared helpers (errors, etc.)
 ui/html           # Base layout, pages, and partial templates
 ui/static/css     # Stylesheets
 ui/static/js      # JavaScript

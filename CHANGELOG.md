@@ -9,30 +9,43 @@ The format is based on "Keep a Changelog" and this project adheres to [Semantic 
 - Add persistent storage for snippets (database layer)
 - Add create form with validation and POST handling
 - Basic tests for handlers and routing
+- User authentication system
+- HTTPS support with automatic certificate management
+
+## [0.3.0] - 2025-08-19
+### Added
+- Structured application logging using `log/slog` (startup and error logs)
+- Dedicated error handling helpers in `helpers.go`:
+  - `serverError` for internal 500 errors with detailed logging
+  - `clientError` for general HTTP error responses
+
+### Changed
+- Refactored project file structure in `cmd/web` to separate concerns:
+  - Introduced `routes.go` for HTTP route registrations
+  - Introduced `helpers.go` for shared error/helper functions
+- Upgraded Go version requirement to 1.25 (updated `go.mod` and README prerequisites)
+- Documentation: Updated README to include structured logging, refined project structure, and Go 1.25 prerequisite
 
 ## [0.2.0] - 2025-08-19
 ### Added
-- Server-side HTML template rendering for the home page (base layout, nav partial, home page).
-- Static file serving from `/static` (CSS, JS, images); added favicon and logo assets.
-- GET and POST handlers for `/snippet/create` with basic responses.
-- Basic UI scaffolding: `ui/static/css/main.css` and `ui/static/js/main.js`.
+- Server-side HTML template rendering for the home page (base layout, nav partial, home page)
+- Static file serving from `/static` (CSS, JS, images); added favicon and logo assets
+- GET and POST handlers for `/snippet/create` with basic responses
+- Basic UI scaffolding: `ui/static/css/main.css` and `ui/static/js/main.js`
+- Route for viewing specific snippets with ID parameter (`/snippet/view/{id}`)
 
 ### Changed
-- Home route now renders templates instead of plain text.
-- Documentation: Expanded README with details on templates and static assets, browser usage, and project structure (2025-08-18).
+- Home route now renders templates instead of plain text
+- Routing now uses Go 1.22 pattern-based `ServeMux` with path parameters (e.g., `{id}`)
+- Documentation: Expanded README with details on templates and static assets, browser usage, and project structure (2025-08-18)
 
 ## [0.1.0] - 2025-08-18
 ### Added
-- Initial Go module and project scaffold
-- HTTP server with `net/http` listening on `:8080`
-- Routes:
-  - `/` (home): returns a greeting
-  - `/snippet/view/{id}`: displays a snippet ID parsed from the URL
-  - `/snippet/create`: placeholder endpoint indicating snippet creation
-- Basic server startup logging
-
-### Notes
-- This is an early development snapshot suitable for following along with incremental sections. No persistence or templates yet.
+- Initial project structure and Go module setup
+- Basic HTTP server with `net/http`
+- Command-line flag for custom address/port configuration
+- Simple handler functions for home, snippet view, and snippet creation
+- Project documentation in README.md with setup and usage instructions
 
 ---
 
