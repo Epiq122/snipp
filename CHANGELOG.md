@@ -15,6 +15,51 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - User authentication system
 - HTTPS support with automatic certificate management
 
+## [0.5.0] - 2025-08-20
+
+### Added
+
+- **HTTP Middleware System** - Complete middleware architecture for request processing
+    - `middleware.go` with three core middleware functions:
+        - `commonHeaders()` - Security headers and server identification
+        - `logRequest()` - Structured request logging with IP, method, URI, and protocol
+        - `recoverPanic()` - Panic recovery with graceful error handling
+- **Security Headers Implementation** - Comprehensive security header configuration:
+    - Content Security Policy (CSP) with font and style source restrictions
+    - Referrer Policy set to "origin-when-cross-origin"
+    - X-Content-Type-Options: "nosniff"
+    - X-Frame-Options: "deny"
+    - X-XSS-Protection: "0" (modern approach)
+    - Custom Server header set to "Go"
+- **Alice Middleware Library Integration** - Professional middleware chaining
+    - Added `github.com/justinas/alice v1.2.0` dependency
+    - Implemented middleware chain pattern in routes for clean composition
+    - Standard middleware chain: `recoverPanic` → `logRequest` → `commonHeaders`
+- **Enhanced Request Logging** - Detailed request tracking
+    - IP address logging for security and analytics
+    - HTTP protocol version tracking
+    - Method and URI logging for debugging
+    - Integration with existing slog structured logging
+
+### Changed
+
+- **Routes Architecture** - Updated routing system to use middleware chains
+    - Refactored `routes.go` to implement Alice middleware chaining
+    - All routes now pass through the standard middleware chain
+    - Improved separation of concerns between routing and middleware
+- **Error Handling** - Enhanced panic recovery and error reporting
+    - Connection close header set on panic recovery
+    - Graceful degradation on server errors
+    - Consistent error logging through middleware chain
+
+### Security
+
+- **Multiple Security Headers** - Defense against common web vulnerabilities
+    - CSP protection against XSS and injection attacks
+    - Frame options to prevent clickjacking
+    - Content type sniffing protection
+    - Referrer policy for privacy protection
+
 ## [0.4.1] - 2025-08-20
 
 ### Added
@@ -26,7 +71,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Template error in view.tmpl when accessing individual snippets - corrected context handling within the {{with .Snippet}} block by using direct field references (.Title, .ID, etc.) instead of redundant path notation (.Snippet.Title)
+- Template error in view.tmpl when accessing individual snippets - corrected context handling within the {{with
+  .Snippet}} block by using direct field references (.Title, .ID, etc.) instead of redundant path notation (
+  .Snippet.Title)
 - Improved template context handling to follow Go's standard template conventions
 - Enhanced error handling in template rendering to provide clearer error messages
 
