@@ -1,6 +1,9 @@
 package main
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 func commonHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -26,6 +29,26 @@ func (app *application) logRequest(next http.Handler) http.Handler {
 			uri    = r.URL.RequestURI()
 		)
 		app.logger.Info("received request", "ip", ip, "proto", proto, "method", method, "uri", uri)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) recoverPanic(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Create a deferred function (which will always be run in the event
+		// of a panic).
+		defer func() {
+
+			// checks if a panic has occurred
+			pv := recover()
+
+			if pv != nil {
+				w.Header().Set("Connection", "close")
+
+				//returns a 500 Internal Server Error response
+				app.serverError(w, r, fmt.Errorf("%v", pv))
+			}
+		}()
 		next.ServeHTTP(w, r)
 	})
 }
