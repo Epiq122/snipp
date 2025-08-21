@@ -87,6 +87,10 @@ func main() {
 		Handler:   app.routes(),
 		ErrorLog:  slog.NewLogLogger(logger.Handler(), slog.LevelError),
 		TLSConfig: tlsConfig,
+		// idle, read, and write timeouts
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	logger.Info("starting on server", "addr", *addr)

@@ -4,12 +4,18 @@ A simple Go web application for creating and viewing text snippets. This reposit
 with each section documented and versioned so that viewers can follow the progress.
 
 - Project status: Active development
-- Current version: 0.7.0 (2025-08-21)
+- Current version: 0.8.0 (2025-08-21)
 - Changelog: See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Features (current)
 
-- HTTP server using `net/http`
+- **HTTPS/TLS Server** with production-ready security:
+    - Complete TLS implementation with certificate-based encryption
+    - Self-signed certificates for development environment
+    - Modern cryptographic standards (X25519, P256 curve preferences)
+    - Secure session cookies with HTTPS-only flag
+    - Connection timeout configurations for production reliability
+- HTTP server using `net/http` with enhanced server configuration
 - **Professional Middleware System**:
     - Request logging with IP tracking and structured logging
     - Comprehensive security headers (CSP, XSS protection, frame options)
@@ -46,6 +52,7 @@ with each section documented and versioned so that viewers can follow the progre
 - MySQL database integration for persistent snippet storage
 - Data models with CRUD operations for snippets
 - **Security Features**:
+    - End-to-end TLS encryption for all HTTP traffic
     - Content Security Policy protection
     - Anti-clickjacking headers
     - Content type sniffing protection
@@ -53,7 +60,8 @@ with each section documented and versioned so that viewers can follow the progre
     - Server-side input validation
     - Length limits and controlled value validation
     - Secure session management with database storage
-- Routes
+    - Modern TLS configuration with enhanced cryptographic standards
+- Routes (all served over HTTPS)
     - `/` — home page with latest snippets
     - `/snippet/view/{id}` — view a snippet by numeric ID (with flash message support)
     - `/snippet/create` — create a new snippet (GET: form, POST: processing with validation and success feedback)
@@ -83,12 +91,22 @@ The project uses these external libraries:
 3. The application uses the DSN format: `web:%s@/snippetbox?parseTime=true` where `%s` is replaced with your password
 4. Session data will be automatically stored in the database
 
+### TLS/HTTPS Setup
+
+The application now runs exclusively over HTTPS with TLS encryption:
+
+1. **Development Environment**: Self-signed certificates are included in the `tls/` directory
+2. **Certificate Files**:
+    - `tls/cert.pem` - TLS certificate for localhost
+    - `tls/key.pem` - Private key for the certificate
+3. **Production**: Replace the development certificates with proper CA-signed certificates
+
 ### Run locally
 
 ```bash
 # From the project root
 go run ./...
-# Server will start on http://localhost:8080
+# Server will start on https://localhost:8080 (note HTTPS)
 ```
 
 #### Custom address/port
@@ -97,22 +115,23 @@ You can change the listen address using the `-addr` flag (defaults to `:8080`):
 
 ```bash
 go run ./cmd/web -addr=:4000
-# Server will start on http://localhost:4000
+# Server will start on https://localhost:4000
 ```
 
-Then open http://localhost:8080 (or your chosen port) in your browser to view the templated home page.
+**Important**: The application now runs exclusively over HTTPS. Open https://localhost:8080 (or your chosen port) in
+your browser. You may need to accept the self-signed certificate warning in your browser for development.
 
 Static files are available under `/static`, for example:
 
-- http://localhost:8080/static/css/main.css
-- http://localhost:8080/static/img/logo.png
+- https://localhost:8080/static/css/main.css
+- https://localhost:8080/static/img/logo.png
 
 ### Example requests
 
-- Home: `curl http://localhost:8080/`
-- View snippet: `curl http://localhost:8080/snippet/view/123`
-- Create (GET placeholder): `curl http://localhost:8080/snippet/create`
-- Create (POST placeholder): `curl -i -X POST http://localhost:8080/snippet/create`
+- Home: `curl -k https://localhost:8080/` (note: `-k` flag to accept self-signed cert)
+- View snippet: `curl -k https://localhost:8080/snippet/view/123`
+- Create (GET): `curl -k https://localhost:8080/snippet/create`
+- Create (POST): `curl -k -X POST https://localhost:8080/snippet/create`
 
 ## Development workflow
 
