@@ -9,11 +9,72 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Planned
 
-- Further enhancements to HTML templates (forms, validation feedback)
-- Add create form with validation and POST handling
 - Basic tests for handlers and routing
 - User authentication system
 - HTTPS support with automatic certificate management
+
+## [0.6.0] - 2025-08-21
+
+### Added
+
+- **Complete Form Handling System** - Professional form processing architecture
+    - `snippetCreateForm` struct with embedded validator for form data handling
+    - Form field validation with custom error messages
+    - Form data preservation on validation errors (sticky forms)
+    - Proper form encoding/decoding with struct tags
+- **Validation Framework** - Comprehensive input validation system
+    - New `internal/validator` package with reusable validation functions
+    - `Validator` struct with field error mapping and validation state tracking
+    - Validation helper functions:
+        - `NotBlank()` - ensures fields are not empty
+        - `MaxChars()` - enforces character limits with UTF-8 support
+        - `PermittedValues()` - validates against allowed values using generics
+    - Embedded validator pattern for clean form struct integration
+- **Form Processing Library Integration** - Professional form handling
+    - Added `github.com/go-playground/form/v4` dependency for form decoding
+    - `decodePostForm()` helper method for automatic form-to-struct mapping
+    - Proper error handling for form decoding with panic recovery
+    - Form decoder initialization in application bootstrap
+- **Create Snippet Form** - Complete user input interface
+    - New `create.tmpl` template with full form implementation
+    - Form fields: title (text), content (textarea), expires (radio buttons)
+    - Real-time validation error display with field-specific messages
+    - Form value preservation on validation errors
+    - Proper form submission handling with POST method
+- **Enhanced UI/UX** - Professional form styling and navigation
+    - Comprehensive form CSS styling with error state handling
+    - Error styling with red borders and bold error messages
+    - Navigation integration with "Create Snippet" link
+    - Responsive form layout with consistent spacing
+    - Radio button styling for expiration options (1 day, 1 week, 1 year)
+
+### Changed
+
+- **Handler Architecture** - Enhanced request processing
+    - `snippetCreate` GET handler now renders proper form template with defaults
+    - `snippetCreatePost` POST handler implements full validation workflow
+    - Template data structure updated with generic `Form any` field
+    - Integration of validation workflow with template rendering
+- **Application Structure** - Form processing capabilities
+    - Added `formDecoder *form.Decoder` to application struct
+    - Form decoder initialization in main.go bootstrap
+    - Updated imports to include form processing and validation packages
+- **Template System** - Form-aware template rendering
+    - Enhanced `templateData` struct to support any form type
+    - Template integration with validation error display
+    - Conditional rendering based on validation state
+- **Error Handling** - Improved form error processing
+    - HTTP 422 Unprocessable Entity status for validation errors
+    - Graceful form re-rendering on validation failures
+    - Structured error display in templates
+
+### Security
+
+- **Input Validation** - Defense against malicious input
+    - Server-side validation for all form fields
+    - Length limits on text inputs to prevent buffer attacks
+    - Controlled value validation for restricted fields
+    - Proper form parsing with error handling
 
 ## [0.5.0] - 2025-08-20
 

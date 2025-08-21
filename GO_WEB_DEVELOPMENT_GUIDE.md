@@ -11,20 +11,22 @@ A well-organized project structure helps maintain code quality and promotes sepa
 cmd/web/               # Application entry point and web components
   ├─ main.go           # App bootstrap, configuration, and dependency injection
   ├─ routes.go         # HTTP route definitions with middleware chains
-  ├─ handlers.go       # HTTP request handlers
+  ├─ handlers.go       # HTTP request handlers with form processing
   ├─ middleware.go     # HTTP middleware functions
   ├─ templates.go      # Template functions and cache
-  └─ helpers.go        # Shared helper functions
+  └─ helpers.go        # Shared helper functions and form decoding
 internal/models/       # Data models and database operations
   ├─ snippets.go       # Core model definitions with CRUD operations
   └─ errors.go         # Custom error types
+internal/validator/    # Input validation framework
+  └─ validator.go      # Reusable validation functions and validator struct
 ui/                    # User interface components
   ├─ html/             # HTML templates
   │   ├─ base.tmpl     # Base layout template
-  │   ├─ pages/        # Page-specific templates
-  │   └─ partials/     # Reusable template components
+  │   ├─ pages/        # Page-specific templates (home, view, create)
+  │   └─ partials/     # Reusable template components (nav)
   └─ static/           # Static assets
-      ├─ css/          # Stylesheets
+      ├─ css/          # Stylesheets with form styling
       ├─ js/           # JavaScript files
       └─ img/          # Images and icons
 ```
@@ -41,274 +43,324 @@ flag.Parse()
 
 // Application struct for dependency injection
 type application struct {
-logger        *slog.Logger
-snippets      *models.SnippetModel
-templateCache map[string]*template.Template
+    logger        *slog.Logger
+    snippets      *models.SnippetModel
+    templateCache map[string]*template.Template
+    formDecoder   *form.Decoder  // Added for form processing
 }
 
 // Environment variable handling for sensitive data
 password := os.Getenv("DB_PASSWORD")
 if password == "" {
-logger.Error("DB_PASSWORD environment variable not set")
-os.Exit(1)
+    logger.Error("DB_PASSWORD environment variable not set")
+    os.Exit(1)
+}
+
+// Form decoder initialization
+formDecoder := form.NewDecoder()
+```
+
+### 2. Form Handling and Validation System
+
+#### Validation Framework Structure
+
+```go
+// Validator struct with embedded field errors
+type Validator struct {
+    FieldErrors map[string]string
+}
+
+// Core validation methods
+func (v *Validator) Valid() bool {
+    return len(v.FieldErrors) == 0
+}
+
+func (v *Validator) AddFieldError(key, message string) {
+    if v.FieldErrors == nil {
+        v.FieldErrors = make(map[string]string)
+    }
+    if _, exists := v.FieldErrors[key]; !exists {
+        v.FieldErrors[key] = message
+    }
+}
+
+func (v *Validator) CheckField(ok bool, key, message string) {
+    if !ok {
+        v.AddFieldError(key, message)
+    }
+}
+
+// Reusable validation functions
+func NotBlank(value string) bool {
+    return strings.TrimSpace(value) != ""
+}
+
+func MaxChars(value string, n int) bool {
+    return utf8.RuneCountInString(value) <= n
+}
+
+func PermittedValues[T comparable](value T, permittedValues ...T) bool {
+    return slices.Contains(permittedValues, value)
 }
 ```
 
-### 2. Database Integration Pattern
+#### Form Struct Pattern
 
 ```go
-// Database connection with proper error handling
-func openDB(dsn string) (*sql.DB, error) {
-db, err := sql.Open("mysql", dsn)
-if err != nil {
-return nil, err
+// Form struct with embedded validator
+type snippetCreateForm struct {
+    Title               string `form:"title"`
+    Content             string `form:"content"`
+    Expires             int    `form:"expires"`
+    validator.Validator `form:"-"`
 }
 
-err = db.Ping()
-if err != nil {
-db.Close()
-return nil, err
-}
-return db, nil
-}
+// Form processing helper
+func (app *application) decodePostForm(r *http.Request, dst any) error {
+    err := r.ParseForm()
+    if err != nil {
+        return err
+    }
 
-// Model structure for database operations
-type SnippetModel struct {
-DB *sql.DB
-}
-
-// CRUD operations with proper error handling
-func (m *SnippetModel) Get(id int) (Snippet, error) {
-stmt := `SELECT id, title, content, created, expires FROM snippets
-            WHERE expires > UTC_TIMESTAMP() AND id = ?`
-
-row := m.DB.QueryRow(stmt, id)
-
-var s Snippet
-err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
-if err != nil {
-if errors.Is(err, sql.ErrNoRows) {
-return Snippet{}, ErrNoRecord
-}
-return Snippet{}, err
-}
-return s, nil
+    err = app.formDecoder.Decode(dst, r.PostForm)
+    if err != nil {
+        var invalidDecoderError *form.InvalidDecoderError
+        if errors.As(err, &invalidDecoderError) {
+            panic(err)
+        }
+        return err
+    }
+    return nil
 }
 ```
 
-### 3. HTTP Middleware System
-
-Professional middleware architecture using Alice for chaining:
+#### Complete Form Handler Pattern
 
 ```go
-// Security headers middleware
-func commonHeaders(next http.Handler) http.Handler {
-return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
-w.Header().Set("Content-Security-Policy",
-"default-src 'self'; style-src 'self' fonts.googleapis.com; font-src fonts.gstatic.com")
-w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
-w.Header().Set("X-Content-Type-Options", "nosniff")
-w.Header().Set("X-Frame-Options", "deny")
-w.Header().Set("X-XSS-Protection", "0")
-w.Header().Set("Server", "Go")
-next.ServeHTTP(w, r)
-})
+// GET handler - display form
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+    data := app.newTemplateData(r)
+    data.Form = snippetCreateForm{
+        Expires: 365, // Set default value
+    }
+    app.render(w, r, http.StatusOK, "create.tmpl", data)
 }
 
-// Request logging middleware
-func (app *application) logRequest(next http.Handler) http.Handler {
-return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
-var (
-ip = r.RemoteAddr
-proto = r.Proto
-method = r.Method
-uri = r.URL.RequestURI()
-)
-app.logger.Info("received request", "ip", ip, "proto", proto, "method", method, "uri", uri)
-next.ServeHTTP(w, r)
-})
-}
+// POST handler - process form with validation
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+    var form snippetCreateForm
 
-// Panic recovery middleware
-func (app *application) recoverPanic(next http.Handler) http.Handler {
-return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
-defer func () {
-if err := recover(); err != nil {
-w.Header().Set("Connection", "close")
-app.serverError(w, r, fmt.Errorf("%s", err))
-}
-}()
-next.ServeHTTP(w, r)
-})
-}
+    // Decode form data into struct
+    err := app.decodePostForm(r, &form)
+    if err != nil {
+        app.clientError(w, http.StatusBadRequest)
+        return
+    }
 
-// Middleware chaining with Alice
-func (app *application) routes() http.Handler {
-mux := http.NewServeMux()
-// ... route definitions ...
+    // Perform validation
+    form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+    form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+    form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+    form.CheckField(validator.PermittedValues(form.Expires, 1, 7, 365), "expires", "This field must be one of the following values: 1, 7, or 365")
 
-standard := alice.New(app.recoverPanic, app.logRequest, commonHeaders)
-return standard.Then(mux)
+    // Handle validation errors
+    if !form.Valid() {
+        data := app.newTemplateData(r)
+        data.Form = form
+        app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
+        return
+    }
+
+    // Process valid form data
+    id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
+    if err != nil {
+        app.serverError(w, r, err)
+        return
+    }
+    
+    http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
 ```
 
-### 4. Template System Architecture
+### 3. Template System with Form Support
 
 ```go
-// Template data structure
+// Enhanced template data structure
 type templateData struct {
-CurrentYear int
-Snippet     models.Snippet
-Snippets    []models.Snippet
+    CurrentYear int
+    Snippet     models.Snippet
+    Snippets    []models.Snippet
+    Form        any  // Generic form field for any form type
 }
 
-// Template cache for performance
-func newTemplateCache() (map[string]*template.Template, error) {
-cache := map[string]*template.Template{}
-pages, err := filepath.Glob("./ui/html/pages/*.tmpl")
-if err != nil {
-return nil, err
+// Template with form handling and error display
+{{define "main"}}
+    <form action="/snippet/create" method="post">
+        <div>
+            <label>Title:</label>
+            {{with .Form.FieldErrors.title}}
+                <label class="error">{{.}}</label>
+            {{end}}
+            <input type="text" name="title" value="{{.Form.Title}}">
+        </div>
+        <div>
+            <label>Content:</label>
+            {{with .Form.FieldErrors.content}}
+                <label class="error">{{.}}</label>
+            {{end}}
+            <textarea name="content">{{.Form.Content}}</textarea>
+        </div>
+        <div>
+            <label>Delete in:</label>
+            {{with .Form.FieldErrors.expires}}
+                <label class="error">{{.}}</label>
+            {{end}}
+            <input type="radio" name="expires" value="365" {{if (eq .Form.Expires 365)}} checked{{end}}> One Year
+            <input type="radio" name="expires" value="7" {{if (eq .Form.Expires 7)}} checked {{end}}> One Week
+            <input type="radio" name="expires" value="1" {{if (eq .Form.Expires 1)}} checked {{end}}> One Day
+        </div>
+        <div>
+            <input type="submit" value="Create Snippet">
+        </div>
+    </form>
+{{end}}
+```
+
+### 4. CSS Styling for Forms
+
+```css
+/* Form styling with error states */
+form div {
+    margin-bottom: 18px;
 }
 
-for _, page := range pages {
-name := filepath.Base(page)
-
-// Register custom functions before parsing
-ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl")
-if err != nil {
-return nil, err
+form input[type="text"], form input[type="password"], form input[type="email"] {
+    padding: 0.75em 18px;
+    width: 100%;
 }
 
-// Add partials and page templates
-ts, err = ts.ParseGlob("./ui/html/partials/*.tmpl")
-if err != nil {
-return nil, err
+form input[type=text], form input[type="password"], form input[type="email"], textarea {
+    color: #6A6C6F;
+    background: #FFFFFF;
+    border: 1px solid #E4E5E7;
+    border-radius: 3px;
 }
 
-ts, err = ts.ParseFiles(page)
-if err != nil {
-return nil, err
+form label {
+    display: inline-block;
+    margin-bottom: 9px;
 }
 
-cache[name] = ts
-}
-return cache, nil
-}
-
-// Custom template functions
-var functions = template.FuncMap{
-"humanDate": humanDate,
+/* Error styling */
+.error {
+    color: #C0392B;
+    font-weight: bold;
+    display: block;
 }
 
-func humanDate(t time.Time) string {
-return t.Format("02 Jan 2006 at 15:04")
+.error + textarea, .error + input {
+    border-color: #C0392B !important;
+    border-width: 2px !important;
+}
+
+/* Submit button styling */
+input[type="submit"] {
+    background-color: #62CB31;
+    border-radius: 3px;
+    color: #FFFFFF;
+    padding: 18px 27px;
+    border: none;
+    display: inline-block;
+    margin-top: 18px;
+    font-weight: 700;
+}
+
+input[type="submit"]:hover {
+    background-color: #4EB722;
+    cursor: pointer;
 }
 ```
 
-### 5. Error Handling Patterns
+## Advanced Form Handling Patterns
+
+### 1. Sticky Forms (Value Preservation)
+
+Forms preserve user input when validation fails, improving user experience:
 
 ```go
-// Structured error handling with logging
-func (app *application) serverError(w http.ResponseWriter, r *http.Request, err error) {
-var (
-method = r.Method
-uri = r.URL.RequestURI()
-)
-app.logger.Error(err.Error(), "method", method, "url", uri)
-http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-}
+// Template preserves form values
+<input type="text" name="title" value="{{.Form.Title}}">
+<textarea name="content">{{.Form.Content}}</textarea>
+```
 
-// Buffer-based template rendering for error catching
-func (app *application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
-ts, ok := app.templateCache[page]
-if !ok {
-err := fmt.Errorf("template %s not found", page)
-app.serverError(w, r, err)
-return
-}
+### 2. Field-Specific Error Display
 
-buf := new(bytes.Buffer)
-err := ts.ExecuteTemplate(buf, "base", data)
-if err != nil {
-app.serverError(w, r, err)
-return
-}
+Each field can display its own validation errors:
 
-w.WriteHeader(status)
-buf.WriteTo(w)
+```go
+{{with .Form.FieldErrors.title}}
+    <label class="error">{{.}}</label>
+{{end}}
+```
+
+### 3. Conditional Radio Button Selection
+
+Radio buttons maintain selection state based on form data:
+
+```go
+<input type="radio" name="expires" value="365" {{if (eq .Form.Expires 365)}} checked{{end}}> One Year
+```
+
+### 4. Generic Form Validation
+
+Validation functions use generics for type safety and reusability:
+
+```go
+func PermittedValues[T comparable](value T, permittedValues ...T) bool {
+    return slices.Contains(permittedValues, value)
 }
 ```
 
-### 6. Handler Patterns
+### 5. Professional Error Handling
+
+HTTP status codes properly indicate validation state:
 
 ```go
-// Standard handler pattern with error handling
-func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-id, err := strconv.Atoi(r.PathValue("id"))
-if err != nil {
-http.NotFound(w, r)
-return
-}
+// 422 Unprocessable Entity for validation errors
+app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
 
-snippet, err := app.snippets.Get(id)
-if err != nil {
-if errors.Is(err, models.ErrNoRecord) {
-http.NotFound(w, r)
-return
-} else {
-app.serverError(w, r, err)
-}
-return
-}
-
-data := app.newTemplateData(r)
-data.Snippet = snippet
-app.render(w, r, http.StatusOK, "view.tmpl", data)
-}
+// 400 Bad Request for form decoding errors
+app.clientError(w, http.StatusBadRequest)
 ```
 
 ## Security Best Practices Implemented
 
-### 1. Security Headers
+### 1. Server-Side Validation
 
-- **Content Security Policy (CSP)**: Prevents XSS attacks by controlling resource loading
-- **X-Frame-Options**: Prevents clickjacking attacks
-- **X-Content-Type-Options**: Prevents MIME type sniffing
-- **Referrer-Policy**: Controls referrer information sent with requests
-- **X-XSS-Protection**: Set to 0 following modern security practices
+- All user input is validated on the server
+- Client-side validation is never trusted
+- Multiple validation rules per field
 
-### 2. Database Security
+### 2. Input Sanitization
 
-- Environment variable for database passwords
-- Prepared statements to prevent SQL injection
-- Proper connection string formatting
+- UTF-8 aware character counting
+- String trimming for blank checks
+- Controlled value validation for restricted fields
 
-### 3. Error Handling
+### 3. Length Limits
 
-- Generic error responses to avoid information disclosure
-- Detailed logging for debugging without exposing sensitive data
-- Panic recovery to prevent application crashes
+- Maximum character limits prevent buffer attacks
+- UTF-8 rune counting for accurate character limits
+- Database field size alignment
 
-## Development Workflow Best Practices
+### 4. CSRF Protection Considerations
 
-### 1. Project Versioning
+While not yet implemented, the form structure supports CSRF tokens:
 
-- Follow Semantic Versioning (SemVer)
-- Maintain detailed changelog with categorized changes
-- Document all major features and fixes
-
-### 2. Code Organization
-
-- Clear separation of concerns (handlers, models, templates)
-- Dependency injection pattern for testability
-- Consistent error handling throughout the application
-
-### 3. Documentation Standards
-
-- Document all public functions and types
-- Maintain comprehensive README with setup instructions
-- Keep changelog updated with each release
-- Include examples and usage patterns
+```go
+// Future CSRF token field
+<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+```
 
 ## Dependencies and External Libraries
 
@@ -316,6 +368,7 @@ app.render(w, r, http.StatusOK, "view.tmpl", data)
 
 - `github.com/go-sql-driver/mysql` - MySQL database driver
 - `github.com/justinas/alice` - HTTP middleware chaining
+- `github.com/go-playground/form/v4` - Professional form processing
 
 ### Standard Library Usage
 
@@ -324,95 +377,130 @@ app.render(w, r, http.StatusOK, "view.tmpl", data)
 - `log/slog` - Structured logging
 - `database/sql` - Database interface
 - `flag` - Command-line argument parsing
+- `unicode/utf8` - UTF-8 string processing
+- `slices` - Generic slice operations
 
-## Testing Considerations
+## Testing Strategies for Forms
 
-### Areas to Test
+### Unit Testing Validation Functions
 
-- Handler functions with various inputs
-- Database model operations
-- Template rendering
-- Middleware functionality
-- Error handling scenarios
-
-### Testing Structure
-
+```go
+func TestNotBlank(t *testing.T) {
+    tests := []struct {
+        input    string
+        expected bool
+    }{
+        {"", false},
+        {"   ", false},
+        {"hello", true},
+        {"  hello  ", true},
+    }
+    
+    for _, test := range tests {
+        result := validator.NotBlank(test.input)
+        if result != test.expected {
+            t.Errorf("NotBlank(%q) = %v; want %v", test.input, result, test.expected)
+        }
+    }
+}
 ```
-cmd/web/
-  ├─ handlers_test.go
-  ├─ middleware_test.go
-  └─ templates_test.go
-internal/models/
-  └─ snippets_test.go
+
+### Integration Testing Form Handlers
+
+```go
+func TestSnippetCreatePost(t *testing.T) {
+    app := &application{...} // Initialize test app
+    
+    form := url.Values{}
+    form.Add("title", "Test Title")
+    form.Add("content", "Test Content")
+    form.Add("expires", "7")
+    
+    req, _ := http.NewRequest("POST", "/snippet/create", strings.NewReader(form.Encode()))
+    req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+    
+    rr := httptest.NewRecorder()
+    app.snippetCreatePost(rr, req)
+    
+    if rr.Code != http.StatusSeeOther {
+        t.Errorf("Expected status %d, got %d", http.StatusSeeOther, rr.Code)
+    }
+}
 ```
 
-## Deployment Considerations
+## Performance Considerations
 
-### Environment Variables
+### 1. Template Caching
 
-- `DB_PASSWORD` - Database password
-- Consider additional config for production (log levels, timeouts, etc.)
+Templates are parsed once at startup for optimal performance
 
-### Production Readiness Checklist
+### 2. Form Decoder Reuse
 
-- [ ] HTTPS configuration
-- [ ] Database connection pooling tuned for load
-- [ ] Logging configured for production environment
-- [ ] Security headers properly configured
-- [ ] Static asset serving optimized
-- [ ] Database migrations handled
-- [ ] Health check endpoints
-- [ ] Graceful shutdown handling
+Single form decoder instance shared across requests
+
+### 3. Validation Short-Circuiting
+
+Validation stops at first error per field to reduce processing
+
+### 4. Memory-Efficient Error Storage
+
+Field errors use map for O(1) lookup and minimal memory overhead
 
 ## Future Enhancements
 
-### Planned Features
+### Planned Form Features
 
-- Form handling with validation
-- User authentication and sessions
-- CSRF protection
-- Rate limiting
-- API endpoints with JSON responses
+- CSRF protection implementation
 - File upload handling
-- Email notifications
-- Admin interface
+- Multi-step forms with session storage
+- AJAX form submission with JSON responses
+- Client-side validation for better UX
 
-### Scalability Considerations
+### Advanced Validation
 
-- Database connection pooling optimization
-- Caching layer (Redis/Memcached)
-- Load balancer compatibility
-- Horizontal scaling patterns
-- Monitoring and metrics
+- Email format validation
+- Password strength checking
+- Custom validation rules
+- Cross-field validation (e.g., password confirmation)
 
-## Lessons Learned
+### Internationalization
 
-### What Worked Well
+- Multi-language error messages
+- Locale-aware validation (date formats, etc.)
+- Template translation support
 
-- Alice middleware chaining provides clean, composable architecture
-- Template caching significantly improves performance
-- Structured logging makes debugging easier
-- Buffer-based template rendering catches errors before sending responses
-- Dependency injection makes the application testable
+## Common Pitfalls and Solutions
 
-### Common Pitfalls to Avoid
+### 1. Form Parsing Errors
 
-- Template context confusion (use correct field references within `{{with}}` blocks)
-- Missing error handling in database operations
-- Forgetting to set proper security headers
-- Not using prepared statements for SQL queries
-- Hardcoding configuration values instead of using flags/environment variables
+**Problem**: Forgetting to call `r.ParseForm()` before accessing form data
+**Solution**: Always use the `decodePostForm` helper which handles parsing
+
+### 2. Template Context Issues
+
+**Problem**: Incorrect field access in templates
+**Solution**: Use `{{with .Form.FieldErrors.fieldname}}` for conditional error display
+
+### 3. Validation Logic Errors
+
+**Problem**: Client-side validation bypass
+**Solution**: Always perform server-side validation regardless of client-side checks
+
+### 4. Memory Leaks in Form Processing
+
+**Problem**: Creating new decoder instances per request
+**Solution**: Share single decoder instance across application
 
 ## Conclusion
 
-This guide represents a solid foundation for Go web applications, incorporating:
+This guide demonstrates a complete, production-ready approach to form handling in Go web applications, featuring:
 
-- Professional middleware architecture
-- Secure by default configurations
-- Clean code organization
-- Comprehensive error handling
-- Performance optimizations
-- Development best practices
+- Professional validation framework with reusable components
+- Clean separation of concerns between validation, processing, and display
+- Secure input handling with proper validation and sanitization
+- User-friendly error handling with sticky forms
+- Comprehensive CSS styling for professional appearance
+- Scalable architecture supporting multiple form types
 
-The patterns demonstrated here can be adapted and extended for more complex applications while maintaining code quality
-and security standards.
+The patterns shown here can be extended to handle complex form requirements while maintaining code quality and security
+standards.
