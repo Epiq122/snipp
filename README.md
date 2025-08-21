@@ -4,7 +4,7 @@ A simple Go web application for creating and viewing text snippets. This reposit
 with each section documented and versioned so that viewers can follow the progress.
 
 - Project status: Active development
-- Current version: 0.5.0 (2025-08-20)
+- Current version: 0.6.0 (2025-08-21)
 - Changelog: See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Features (current)
@@ -15,6 +15,12 @@ with each section documented and versioned so that viewers can follow the progre
     - Comprehensive security headers (CSP, XSS protection, frame options)
     - Panic recovery with graceful error handling
     - Alice middleware chaining for clean composition
+- **Complete Form Handling System**:
+    - Professional form processing with validation
+    - Custom validation framework with reusable functions
+    - Form data preservation on validation errors (sticky forms)
+    - Real-time validation error display with field-specific messages
+    - Automatic form-to-struct mapping with struct tags
 - Structured logging via `log/slog` (startup and error logs)
 - Dynamic HTML templates with proper context handling:
     - Base layout template with content blocks (`ui/html/base.tmpl`)
@@ -32,10 +38,12 @@ with each section documented and versioned so that viewers can follow the progre
     - Anti-clickjacking headers
     - Content type sniffing protection
     - Secure referrer policy
+    - Server-side input validation
+    - Length limits and controlled value validation
 - Routes
     - `/` — home page with latest snippets
     - `/snippet/view/{id}` — view a snippet by numeric ID
-    - `/snippet/create` — create a new snippet (GET and POST)
+    - `/snippet/create` — create a new snippet (GET: form, POST: processing with validation)
 
 ## Getting started
 
@@ -51,6 +59,7 @@ The project uses these external libraries:
 
 - `github.com/go-sql-driver/mysql` - MySQL driver for database connectivity
 - `github.com/justinas/alice` - HTTP middleware chaining
+- `github.com/go-playground/form/v4` - Professional form processing and validation
 
 ### Database Setup
 
