@@ -4,7 +4,7 @@ A simple Go web application for creating and viewing text snippets. This reposit
 with each section documented and versioned so that viewers can follow the progress.
 
 - Project status: Active development
-- Current version: 0.6.0 (2025-08-21)
+- Current version: 0.7.0 (2025-08-21)
 - Changelog: See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Features (current)
@@ -15,6 +15,17 @@ with each section documented and versioned so that viewers can follow the progre
     - Comprehensive security headers (CSP, XSS protection, frame options)
     - Panic recovery with graceful error handling
     - Alice middleware chaining for clean composition
+    - Dynamic middleware chains for session-enabled routes
+- **Session Management System**:
+    - Professional session handling with database storage
+    - MySQL-based session store with automatic expiration (12-hour lifetime)
+    - Secure session cookie handling with database backing
+    - Session middleware integration with existing middleware chains
+- **Flash Messaging System**:
+    - User feedback with temporary session-based messages
+    - Automatic flash message display in templates
+    - Success notifications after form submissions
+    - Professional styling for user notifications
 - **Complete Form Handling System**:
     - Professional form processing with validation
     - Custom validation framework with reusable functions
@@ -29,6 +40,7 @@ with each section documented and versioned so that viewers can follow the progre
     - Proper context handling in template blocks (using Go's template conventions)
     - Template caching for improved performance
     - Custom template functions (humanDate formatting)
+    - Flash message integration in base template
 - Static assets served from `/static` (`ui/static` for CSS/JS/images)
 - Routing with Go 1.22+ pattern-based `ServeMux` (path variables like `{id}`)
 - MySQL database integration for persistent snippet storage
@@ -40,10 +52,11 @@ with each section documented and versioned so that viewers can follow the progre
     - Secure referrer policy
     - Server-side input validation
     - Length limits and controlled value validation
+    - Secure session management with database storage
 - Routes
     - `/` — home page with latest snippets
-    - `/snippet/view/{id}` — view a snippet by numeric ID
-    - `/snippet/create` — create a new snippet (GET: form, POST: processing with validation)
+    - `/snippet/view/{id}` — view a snippet by numeric ID (with flash message support)
+    - `/snippet/create` — create a new snippet (GET: form, POST: processing with validation and success feedback)
 
 ## Getting started
 
@@ -60,12 +73,15 @@ The project uses these external libraries:
 - `github.com/go-sql-driver/mysql` - MySQL driver for database connectivity
 - `github.com/justinas/alice` - HTTP middleware chaining
 - `github.com/go-playground/form/v4` - Professional form processing and validation
+- `github.com/alexedwards/scs/v2` - Session management framework
+- `github.com/alexedwards/scs/mysqlstore` - MySQL-backed session storage
 
 ### Database Setup
 
 1. Create a MySQL database called `snippetbox`
 2. Ensure your MySQL user has appropriate permissions
 3. The application uses the DSN format: `web:%s@/snippetbox?parseTime=true` where `%s` is replaced with your password
+4. Session data will be automatically stored in the database
 
 ### Run locally
 

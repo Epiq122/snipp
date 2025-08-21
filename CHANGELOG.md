@@ -13,6 +13,64 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - User authentication system
 - HTTPS support with automatic certificate management
 
+## [0.7.0] - 2025-08-21
+
+### Added
+
+- **Session Management System** - Complete session handling with database storage
+    - Integration of `github.com/alexedwards/scs/v2` for professional session management
+    - MySQL-based session storage using `github.com/alexedwards/scs/mysqlstore`
+    - 12-hour session lifetime with automatic expiration
+    - Session middleware integration with Alice middleware chains
+- **Flash Messaging System** - User feedback with temporary messages
+    - Flash message support for user notifications and feedback
+    - Session-based flash message storage with automatic cleanup
+    - Template integration for flash message display
+    - Success message display after snippet creation
+- **Enhanced User Experience** - Improved feedback and interaction
+    - Flash message styling with professional appearance
+    - Automatic flash message display in base template
+    - Context-aware message handling with session integration
+    - User feedback after form submissions
+- **Advanced Middleware Architecture** - Sophisticated request processing
+    - Dynamic middleware chain for session-enabled routes
+    - Separation of static and dynamic route handling
+    - Session middleware (`LoadAndSave`) integration with existing middleware
+    - Clean middleware composition with Alice chaining
+
+### Changed
+
+- **Application Structure** - Enhanced with session capabilities
+    - Added `sessionManager *scs.SessionManager` to application struct
+    - Session manager initialization in main.go bootstrap
+    - Updated imports to include session management libraries
+- **Template System** - Flash message integration
+    - Added `Flash string` field to `templateData` struct
+    - Enhanced `newTemplateData()` helper to auto-populate flash messages
+    - Base template updated with flash message display block
+- **Route Architecture** - Session-aware routing
+    - Implemented dynamic middleware chain for session-enabled routes
+    - All dynamic routes now use session middleware
+    - Maintained static file serving without session overhead
+- **Handler Enhancement** - User feedback integration
+    - Updated `snippetCreatePost` handler to set success flash messages
+    - Enhanced `snippetView` handler with flash message support (prepared but not active)
+    - Improved user feedback workflow after form submissions
+
+### Security
+
+- **Session Security** - Secure session management
+    - Database-backed session storage for security and scalability
+    - Automatic session expiration (12-hour lifetime)
+    - Secure session cookie handling
+    - Session data isolated from client-side storage
+
+### Dependencies
+
+- **New Libraries** - Professional session management
+    - `github.com/alexedwards/scs/v2 v2.9.0` - Core session management
+    - `github.com/alexedwards/scs/mysqlstore` - MySQL session store
+
 ## [0.6.0] - 2025-08-21
 
 ### Added
