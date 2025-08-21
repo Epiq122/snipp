@@ -11,7 +11,56 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Basic tests for handlers and routing
 - User authentication system
-- HTTPS support with automatic certificate management
+
+## [0.8.0] - 2025-08-21
+
+### Added
+
+- **HTTPS/TLS Support** - Complete secure server implementation
+    - TLS server configuration with `ListenAndServeTLS()`
+    - Self-signed certificate generation for development (`./tls/cert.pem`, `./tls/key.pem`)
+    - Custom TLS configuration with modern curve preferences (X25519, P256)
+    - Secure session cookies with `Secure: true` flag
+- **Enhanced Server Configuration** - Professional server setup
+    - Structured `http.Server` configuration with custom settings
+    - Connection timeout configurations:
+        - `IdleTimeout: time.Minute` - Connection idle timeout
+        - `ReadTimeout: 5 * time.Second` - Request read timeout
+        - `WriteTimeout: 10 * time.Second` - Response write timeout
+    - Custom error logging integration with slog
+    - TLS certificate file management and organization
+- **Security Enhancements** - Production-ready security features
+    - HTTPS-only session cookies for secure session management
+    - Modern TLS curve preferences for enhanced encryption
+    - Certificate-based encryption for all HTTP traffic
+    - Secure localhost development environment setup
+
+### Changed
+
+- **Server Architecture** - Enhanced from basic HTTP to secure HTTPS
+    - Migrated from `http.ListenAndServe()` to `srv.ListenAndServeTLS()`
+    - Added comprehensive server configuration structure
+    - Enhanced session security with HTTPS-only cookies
+    - Updated logging to use structured error logging with slog integration
+- **Development Environment** - HTTPS-first development setup
+    - Local development now uses HTTPS with self-signed certificates
+    - Enhanced security posture for development and testing
+    - Certificate management for development workflows
+
+### Security
+
+- **Transport Layer Security** - End-to-end encryption
+    - All HTTP traffic now encrypted with TLS
+    - Modern cryptographic standards with elliptic curve preferences
+    - Secure session cookie handling prevents session hijacking
+    - Certificate-based authentication and encryption
+
+### Infrastructure
+
+- **TLS Certificate Management** - Organized certificate structure
+    - `tls/` directory for certificate and key storage
+    - Self-signed certificates for development environment
+    - Proper file organization for production certificate deployment
 
 ## [0.7.0] - 2025-08-21
 
