@@ -3,13 +3,18 @@
 A simple Go web application for creating and viewing text snippets. This repository is being developed incrementally,
 with each section documented and versioned so that viewers can follow the progress.
 
-- Project status: Early development
-- Current version: 0.4.1 (2025-08-20)
+- Project status: Active development
+- Current version: 0.5.0 (2025-08-20)
 - Changelog: See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Features (current)
 
 - HTTP server using `net/http`
+- **Professional Middleware System**:
+    - Request logging with IP tracking and structured logging
+    - Comprehensive security headers (CSP, XSS protection, frame options)
+    - Panic recovery with graceful error handling
+    - Alice middleware chaining for clean composition
 - Structured logging via `log/slog` (startup and error logs)
 - Dynamic HTML templates with proper context handling:
     - Base layout template with content blocks (`ui/html/base.tmpl`)
@@ -17,10 +22,16 @@ with each section documented and versioned so that viewers can follow the progre
     - Reusable partial templates (`ui/html/partials/`)
     - Proper context handling in template blocks (using Go's template conventions)
     - Template caching for improved performance
+    - Custom template functions (humanDate formatting)
 - Static assets served from `/static` (`ui/static` for CSS/JS/images)
 - Routing with Go 1.22+ pattern-based `ServeMux` (path variables like `{id}`)
 - MySQL database integration for persistent snippet storage
 - Data models with CRUD operations for snippets
+- **Security Features**:
+    - Content Security Policy protection
+    - Anti-clickjacking headers
+    - Content type sniffing protection
+    - Secure referrer policy
 - Routes
     - `/` — home page with latest snippets
     - `/snippet/view/{id}` — view a snippet by numeric ID
@@ -33,6 +44,13 @@ with each section documented and versioned so that viewers can follow the progre
 - Go 1.25+ (or compatible)
 - MySQL server
 - Environment variable `DB_PASSWORD` set with your database password
+
+### Dependencies
+
+The project uses these external libraries:
+
+- `github.com/go-sql-driver/mysql` - MySQL driver for database connectivity
+- `github.com/justinas/alice` - HTTP middleware chaining
 
 ### Database Setup
 

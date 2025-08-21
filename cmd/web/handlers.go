@@ -10,7 +10,7 @@ import (
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "Go")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	snippets, err := app.snippets.Latest()
 	if err != nil {
