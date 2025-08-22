@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"regexp"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -46,4 +47,23 @@ func MaxChars(value string, n int) bool {
 // returns true if the value is one of the allowed values
 func PermittedValues[T comparable](value T, permittedValues ...T) bool {
 	return slices.Contains(permittedValues, value)
+}
+
+// ------ USER VALIDATION ------
+
+// Use the regexp.MustCompile() function to parse a regular expression pattern
+// for sanity checking the format of an email address. This returns a pointer to
+// a 'compiled' regexp.Regexp type, or panics in the event of an error. Parsing
+// this pattern once at startup and storing the compiled *regexp.Regexp in a
+// variable is more performant than re-parsing the pattern each time we need it.
+
+var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+
+func MinChars(value string, n int) bool {
+	return utf8.RuneCountInString(value) >= n
+}
+
+func Matches(value string, rx *regexp.Regexp) bool {
+	return rx.MatchString(value)
+
 }
