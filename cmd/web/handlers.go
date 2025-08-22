@@ -23,7 +23,6 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	data.Snippets = snippets
 
 	app.render(w, r, http.StatusOK, "home.tmpl", data)
-
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
@@ -43,13 +42,9 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	//// retrieve the value for the "flash" key from the session
-	//flash := app.sessionManager.PopString(r.Context(), "flash")
 
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
-
-	//data.Flash = flash
 
 	app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
@@ -57,15 +52,13 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
-	// create an instance of the snippetCreateForm struct and add it to the templateData
 	data.Form = snippetCreateForm{
-		Expires: 365, // default value for expires
+		Expires: 365,
 	}
 
 	app.render(w, r, http.StatusOK, "create.tmpl", data)
 }
 
-// represents the form data
 type snippetCreateForm struct {
 	Title               string `form:"title"`
 	Content             string `form:"content"`
@@ -100,13 +93,9 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// this is where our flash message will be set
-	// first param is the current request context and the second is the key for the flash message
 	app.sessionManager.Put(r.Context(), "flash", "Snippet successfully created!")
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
-
-// --- user section ---
 
 type userSignupForm struct {
 	Name                string `form:"name"`
@@ -141,8 +130,8 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		data.Form = form
 		app.render(w, r, http.StatusUnprocessableEntity, "signup.tmpl", data)
 		return
-
 	}
+
 	err = app.users.Insert(form.Name, form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrDuplicateEmail) {
@@ -150,7 +139,6 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			data := app.newTemplateData(r)
 			data.Form = form
 			app.render(w, r, http.StatusUnprocessableEntity, "signup.tmpl", data)
-
 		} else {
 			app.serverError(w, r, err)
 		}
@@ -158,7 +146,6 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please log in.")
-
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
@@ -172,7 +159,6 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Form = userLoginForm{}
 	app.render(w, r, http.StatusOK, "login.tmpl", data)
-
 }
 
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
@@ -182,7 +168,6 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
-
 	}
 
 	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
@@ -216,7 +201,6 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", userID)
-
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
@@ -226,11 +210,8 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, r, err)
 		return
 	}
-	// remove the authenticatedUserID from the session
+
 	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
-
-	// set a flash message to inform the user that they have been logged out
 	app.sessionManager.Put(r.Context(), "flash", "You have been logged out successfully.")
-
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

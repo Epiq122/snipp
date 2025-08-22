@@ -14,7 +14,6 @@ type Snippet struct {
 	Expires time.Time
 }
 
-// Define a SnippetModel type which wraps a sql.DB connection pool.
 type SnippetModel struct {
 	DB *sql.DB
 }
@@ -33,7 +32,6 @@ func (m *SnippetModel) Insert(title string, content string, expires int) (int, e
 		return 0, err
 	}
 	return int(id), nil
-
 }
 
 func (m SnippetModel) Get(id int) (Snippet, error) {
@@ -53,7 +51,6 @@ func (m SnippetModel) Get(id int) (Snippet, error) {
 		}
 	}
 	return s, nil
-
 }
 
 func (m SnippetModel) Latest() ([]Snippet, error) {
@@ -79,6 +76,6 @@ func (m SnippetModel) Latest() ([]Snippet, error) {
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return snippets, nil
 
+	return snippets, nil
 }

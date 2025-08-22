@@ -28,16 +28,12 @@ type application struct {
 }
 
 func main() {
-
 	addr := flag.String("addr", ":8080", "http service address")
-
 	dsn := flag.String("dsn", "web:%s@/snippetbox?parseTime=true", "MySQL data source name")
-
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	// Get password from environment
 	password := os.Getenv("DB_PASSWORD")
 	if password == "" {
 		logger.Error("DB_PASSWORD environment variable not set")
@@ -63,8 +59,6 @@ func main() {
 	sessionManager := scs.New()
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
-
-	// Set secure cookies
 	sessionManager.Cookie.Secure = true
 
 	app := &application{
@@ -80,27 +74,22 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
-	// Initialize a tls.Config struct to hold the non-default TLS settings we
-	// want the server to use
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 	}
 
 	srv := &http.Server{
-		Addr:      *addr,
-		Handler:   app.routes(),
-		ErrorLog:  slog.NewLogLogger(logger.Handler(), slog.LevelError),
-		TLSConfig: tlsConfig,
-		// idle, read, and write timeouts
+		Addr:         *addr,
+		Handler:      app.routes(),
+		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		TLSConfig:    tlsConfig,
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
 	logger.Info("starting on server", "addr", *addr)
-
 	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
-
 	logger.Error(err.Error())
 	os.Exit(1)
 }
