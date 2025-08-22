@@ -196,7 +196,6 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// checks the credentials and returns the user ID if successful
 	userID, err := app.users.Authenticate(form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
@@ -209,22 +208,29 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Use the RenewToken() method on the current session to change the session
-	// ID. It's good practice to generate a new session ID when the
-	// authentication state or privilege levels change for the user (e.g. login
-	// and logout operations).
+
 	err = app.sessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	// Store the user ID in the session under the "authenticatedUserID" key.
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", userID)
 
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Logout the user")
+	err := app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+	// remove the authenticatedUserID from the session
+	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
+
+	// set a flash message to inform the user that they have been logged out
+	app.sessionManager.Put(r.Context(), "flash", "You have been logged out successfully.")
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
