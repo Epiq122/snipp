@@ -10,7 +10,97 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Planned
 
 - Basic tests for handlers and routing
-- User authentication system
+
+## [0.9.0] - 2025-08-21
+
+### Added
+
+- **Complete User Authentication System** - Full user registration and login functionality
+    - `internal/models/users.go` with User model and database operations
+    - User registration with secure password hashing using bcrypt (cost factor 12)
+    - User login with credential authentication and session management
+    - Password validation with minimum 8-character requirement
+    - Email format validation with regex pattern matching
+    - Duplicate email detection and user-friendly error handling
+- **CSRF Protection** - Cross-Site Request Forgery defense system
+    - Integration of `github.com/justinas/nosurf` for CSRF token generation
+    - CSRF tokens automatically included in all forms via template data
+    - Secure CSRF cookie configuration with HttpOnly and Secure flags
+    - CSRF middleware applied to all dynamic routes
+- **Authentication Middleware** - Route protection and access control
+    - `requireAuthentication` middleware for protecting routes requiring login
+    - Session-based authentication state checking with `isAuthenticated` helper
+    - Automatic redirection to login page for unauthenticated users
+    - Cache-Control headers set to prevent caching of protected content
+- **Enhanced Validation Framework** - Extended input validation capabilities
+    - Email regex validation with comprehensive pattern matching
+    - Minimum character length validation (`MinChars`)
+    - Pattern matching validation (`Matches`) with regex support
+    - Non-field error support for general form validation messages
+    - Enhanced Validator struct with both field and non-field error handling
+- **User Authentication Templates** - Complete UI for user management
+    - `signup.tmpl` template with name, email, and password fields
+    - `login.tmpl` template with email/password authentication
+    - Form validation error display with field-specific messaging
+    - Non-field error display for authentication failures
+    - CSRF token integration in all authentication forms
+- **Session Security Enhancements** - Advanced session management features
+    - Session token renewal on login/logout for security
+    - Authenticated user ID storage in session data
+    - Session-based authentication state tracking
+    - Secure logout with session data cleanup and token renewal
+
+### Changed
+
+- **Application Architecture** - Enhanced with user management capabilities
+    - Added `users *models.UserModel` to application struct
+    - Updated template data structure with `IsAuthenticated` and `CSRFToken` fields
+    - Enhanced `newTemplateData` helper to automatically populate auth status and CSRF tokens
+- **Route Protection** - Access control implementation
+    - Snippet creation routes now require authentication
+    - User logout route protected and accessible only when authenticated
+    - Clear separation between public and protected route groups
+- **Navigation System** - Dynamic UI based on authentication state
+    - Conditional navigation menu showing different options for authenticated/unauthenticated users
+    - "Create Snippet" link only visible to authenticated users
+    - Login/Signup links for unauthenticated users
+    - Logout form with CSRF protection for authenticated users
+- **Error Handling** - Enhanced validation and authentication error management
+    - New authentication-specific error types: `ErrInvalidCredentials`, `ErrDuplicateEmail`
+    - Comprehensive form validation with both field and non-field errors
+    - User-friendly error messages for authentication failures
+- **Middleware Architecture** - Multi-layered request processing
+    - Dynamic routes now use both session and CSRF protection middleware
+    - Protected routes use additional authentication middleware layer
+    - Enhanced middleware composition with Alice chaining
+
+### Security
+
+- **Password Security** - Industry-standard password protection
+    - Bcrypt password hashing with high cost factor (12)
+    - Secure password storage in database with hashed_password field
+    - Password comparison using bcrypt's constant-time comparison
+- **Session Security** - Enhanced session management
+    - Session token renewal on authentication state changes
+    - Secure session data handling for user identification
+    - Protection against session fixation attacks
+- **CSRF Protection** - Complete protection against cross-site attacks
+    - CSRF tokens required for all state-changing operations
+    - Secure CSRF cookie configuration
+    - Integration with all forms requiring protection
+
+### Dependencies
+
+- **New Security Libraries** - Professional authentication and security tools
+    - `github.com/justinas/nosurf v1.2.0` - CSRF protection middleware
+    - `golang.org/x/crypto v0.41.0` - Cryptographic functions including bcrypt
+
+### Infrastructure
+
+- **Database Schema Extensions** - User management tables
+    - Users table with id, name, email, hashed_password, and created fields
+    - Email uniqueness constraint for preventing duplicate accounts
+    - MySQL integration with existing database structure
 
 ## [0.8.0] - 2025-08-21
 
