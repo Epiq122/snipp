@@ -3,40 +3,57 @@
 A simple Go web application for creating and viewing text snippets. This repository is being developed incrementally,
 with each section documented and versioned so that viewers can follow the progress.
 
-- Project status: Active development
-- Current version: 0.8.0 (2025-08-21)
+- Project status: Production-ready
+- Current version: 0.9.0 (2025-08-21)
 - Changelog: See [CHANGELOG.md](./CHANGELOG.md)
 
 ## Features (current)
 
+- **Complete User Authentication System**:
+    - User registration with secure password hashing (bcrypt cost factor 12)
+    - User login with credential authentication and session management
+    - Password validation with 8-character minimum requirement
+    - Email format validation with comprehensive regex patterns
+    - Duplicate email detection with user-friendly error messages
+    - Session-based authentication state tracking
+- **CSRF Protection**:
+    - Complete protection against Cross-Site Request Forgery attacks
+    - CSRF tokens automatically included in all forms
+    - Secure CSRF cookie configuration with HttpOnly and Secure flags
+- **Route Protection and Access Control**:
+    - Authentication middleware for protecting sensitive routes
+    - Automatic redirection to login page for unauthenticated users
+    - Conditional navigation based on authentication state
+    - Cache-Control headers for protected content
 - **HTTPS/TLS Server** with production-ready security:
     - Complete TLS implementation with certificate-based encryption
     - Self-signed certificates for development environment
     - Modern cryptographic standards (X25519, P256 curve preferences)
     - Secure session cookies with HTTPS-only flag
     - Connection timeout configurations for production reliability
-- HTTP server using `net/http` with enhanced server configuration
 - **Professional Middleware System**:
     - Request logging with IP tracking and structured logging
     - Comprehensive security headers (CSP, XSS protection, frame options)
     - Panic recovery with graceful error handling
     - Alice middleware chaining for clean composition
-    - Dynamic middleware chains for session-enabled routes
+    - Multi-layered middleware architecture (public, dynamic, protected routes)
 - **Session Management System**:
     - Professional session handling with database storage
     - MySQL-based session store with automatic expiration (12-hour lifetime)
     - Secure session cookie handling with database backing
-    - Session middleware integration with existing middleware chains
+    - Session token renewal on authentication state changes
+    - Protection against session fixation attacks
 - **Flash Messaging System**:
     - User feedback with temporary session-based messages
     - Automatic flash message display in templates
     - Success notifications after form submissions
     - Professional styling for user notifications
-- **Complete Form Handling System**:
+- **Enhanced Form Handling System**:
     - Professional form processing with validation
     - Custom validation framework with reusable functions
     - Form data preservation on validation errors (sticky forms)
     - Real-time validation error display with field-specific messages
+    - Both field and non-field error support
     - Automatic form-to-struct mapping with struct tags
 - Structured logging via `log/slog` (startup and error logs)
 - Dynamic HTML templates with proper context handling:
@@ -46,25 +63,30 @@ with each section documented and versioned so that viewers can follow the progre
     - Proper context handling in template blocks (using Go's template conventions)
     - Template caching for improved performance
     - Custom template functions (humanDate formatting)
-    - Flash message integration in base template
+    - Flash message and authentication state integration
 - Static assets served from `/static` (`ui/static` for CSS/JS/images)
 - Routing with Go 1.22+ pattern-based `ServeMux` (path variables like `{id}`)
-- MySQL database integration for persistent snippet storage
-- Data models with CRUD operations for snippets
+- MySQL database integration for persistent snippet and user storage
+- Data models with CRUD operations for snippets and users
 - **Security Features**:
     - End-to-end TLS encryption for all HTTP traffic
+    - Industry-standard password hashing with bcrypt
+    - CSRF protection for all state-changing operations
     - Content Security Policy protection
     - Anti-clickjacking headers
     - Content type sniffing protection
     - Secure referrer policy
-    - Server-side input validation
+    - Server-side input validation with comprehensive patterns
     - Length limits and controlled value validation
     - Secure session management with database storage
     - Modern TLS configuration with enhanced cryptographic standards
-- Routes (all served over HTTPS)
-    - `/` — home page with latest snippets
-    - `/snippet/view/{id}` — view a snippet by numeric ID (with flash message support)
-    - `/snippet/create` — create a new snippet (GET: form, POST: processing with validation and success feedback)
+- Routes (all served over HTTPS with authentication where needed):
+    - `/` — home page with latest snippets (public)
+    - `/snippet/view/{id}` — view a snippet by numeric ID (public)
+    - `/user/signup` — user registration form and processing (public)
+    - `/user/login` — user login form and processing (public)
+    - `/snippet/create` — create a new snippet (requires authentication)
+    - `/user/logout` — user logout (requires authentication)
 
 ## Getting started
 
@@ -83,17 +105,20 @@ The project uses these external libraries:
 - `github.com/go-playground/form/v4` - Professional form processing and validation
 - `github.com/alexedwards/scs/v2` - Session management framework
 - `github.com/alexedwards/scs/mysqlstore` - MySQL-backed session storage
+- `github.com/justinas/nosurf` - CSRF protection middleware
+- `golang.org/x/crypto` - Cryptographic functions including bcrypt password hashing
 
 ### Database Setup
 
 1. Create a MySQL database called `snippetbox`
-2. Ensure your MySQL user has appropriate permissions
-3. The application uses the DSN format: `web:%s@/snippetbox?parseTime=true` where `%s` is replaced with your password
-4. Session data will be automatically stored in the database
+2. Create the required tables for snippets and users
+3. Ensure your MySQL user has appropriate permissions
+4. The application uses the DSN format: `web:%s@/snippetbox?parseTime=true` where `%s` is replaced with your password
+5. Session data will be automatically stored in the database
 
 ### TLS/HTTPS Setup
 
-The application now runs exclusively over HTTPS with TLS encryption:
+The application runs exclusively over HTTPS with TLS encryption:
 
 1. **Development Environment**: Self-signed certificates are included in the `tls/` directory
 2. **Certificate Files**:
@@ -118,8 +143,24 @@ go run ./cmd/web -addr=:4000
 # Server will start on https://localhost:4000
 ```
 
-**Important**: The application now runs exclusively over HTTPS. Open https://localhost:8080 (or your chosen port) in
-your browser. You may need to accept the self-signed certificate warning in your browser for development.
+**Important**: The application runs exclusively over HTTPS. Open https://localhost:8080 (or your chosen port) in your
+browser. You may need to accept the self-signed certificate warning in your browser for development.
+
+### User Authentication
+
+The application now includes complete user authentication:
+
+1. **Sign Up**: Create a new account at `/user/signup`
+    - Requires name, email, and password (minimum 8 characters)
+    - Email addresses must be unique
+    - Passwords are securely hashed using bcrypt
+2. **Log In**: Access your account at `/user/login`
+    - Uses email and password authentication
+    - Creates secure session for authenticated access
+3. **Protected Features**:
+    - Creating snippets requires authentication
+    - Authenticated users see different navigation options
+    - Logout functionality available when logged in
 
 Static files are available under `/static`, for example:
 
@@ -128,10 +169,12 @@ Static files are available under `/static`, for example:
 
 ### Example requests
 
-- Home: `curl -k https://localhost:8080/` (note: `-k` flag to accept self-signed cert)
+- Home: `curl -k https://localhost:8080/`
 - View snippet: `curl -k https://localhost:8080/snippet/view/123`
-- Create (GET): `curl -k https://localhost:8080/snippet/create`
-- Create (POST): `curl -k -X POST https://localhost:8080/snippet/create`
+- User signup: `curl -k https://localhost:8080/user/signup`
+- User login: `curl -k https://localhost:8080/user/login`
+
+Note: Use `-k` flag with curl to accept self-signed certificates in development.
 
 ## Development workflow
 
