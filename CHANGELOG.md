@@ -11,6 +11,46 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Basic tests for handlers and routing
 
+## [0.10.0] - 2025-08-22
+
+### Added
+
+- **Context-Based Authentication System** - Advanced authentication state management
+    - New `context.go` file with `isAuthenticatedContextKey` context key
+    - Context-aware authentication state tracking throughout request lifecycle
+    - Improved separation of concerns between session data and request context
+- **Enhanced Authentication Middleware** - Sophisticated authentication processing
+    - New `authenticate` middleware that validates user existence on each request
+    - Context-based authentication state injection into request pipeline
+    - Automatic user validation against database for active sessions
+    - Integration with existing session management for seamless authentication flow
+- **User Existence Verification** - Database validation for active users
+    - Implementation of `UserModel.Exists()` method with efficient database queries
+    - User validation using `SELECT EXISTS()` for optimal performance
+    - Protection against deleted users with active sessions
+- **Improved Middleware Architecture** - Enhanced request processing pipeline
+    - Integration of `authenticate` middleware into dynamic route chain
+    - Context-aware authentication checking in `isAuthenticated` helper
+    - Seamless integration with existing CSRF protection and session management
+
+### Changed
+
+- **Authentication Flow** - Enhanced user validation and context management
+    - Updated `isAuthenticated` helper to use context values instead of direct session checks
+    - Enhanced middleware chain with automatic user existence validation
+    - Improved authentication state consistency across request lifecycle
+- **Route Architecture** - Context-aware authentication integration
+    - Dynamic routes now include user authentication validation middleware
+    - Enhanced security through multi-layered authentication checks
+    - Improved performance with context-based authentication state caching
+
+### Security
+
+- **Enhanced User Validation** - Protection against stale authentication sessions
+    - Automatic validation of user existence for each authenticated request
+    - Protection against deleted users maintaining active sessions
+    - Improved authentication state consistency and security
+
 ## [0.9.0] - 2025-08-21
 
 ### Added
